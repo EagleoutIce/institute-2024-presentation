@@ -1,0 +1,54 @@
+% https://www.ctan.org/pkg/lua-visual-debug?
+
+% originally hacked during digital typography lecture
+
+\usepackage{transparent}
+\usepackage{xcolor}
+
+% TODO: update
+\colorlet{@}{black}
+
+
+\newsavebox\BoxCharOne
+\newsavebox\BoxCharTwo
+\newdimen\BoxKernTarget
+% TODO: color stuff
+
+\newsavebox\BoxSpace
+\def\RenderTextGroupInit{\transparent{0.85}%
+\fboxsep0pt\relax
+\fboxrule.1pt\relax
+\setbox\BoxSpace=\hbox{ }\def\ {\transparent{.85}\color{gray}\rule{\wd\BoxSpace}{2pt}}\robustify\ }
+
+\newcommand\MBox[2][lightgray]{{\transparent{.85}\color{#1}\fbox{\color{@}#2}}}
+
+% first #1 | #2 is the followup for kerning
+\def\DrawChar#1#2{%
+    \kern-\fboxrule\relax
+    \setbox0=\hbox{#1#2}%
+    \setbox\BoxCharOne=\hbox{#1}%
+    \setbox\BoxCharTwo=\hbox{#2}%
+    \BoxKernTarget=\dimexpr\wd0-\wd\BoxCharOne-\wd\BoxCharTwo\relax
+    \MBox{\transparent{1}\copy\BoxCharOne}%
+    % highlight baseline
+    \ifdim\dp\BoxCharOne>0pt\relax
+        \llap{\color{lightgray}\raisebox{-.5\fboxrule}{\rule{\dimexpr\wd\BoxCharOne+\fboxrule+\fboxrule}{\fboxrule}}}%
+    \fi
+    % TODO: group into macro?
+    \raisebox{-\dp\BoxCharOne}{\ifdim\BoxKernTarget<0pt\relax
+        \kern\BoxKernTarget\kern-\fboxrule
+        {\color{blue}\rule{\dimexpr-\BoxKernTarget}{\dimexpr\ht\BoxCharOne+\dp\BoxCharOne}}%
+        \kern\BoxKernTarget
+    \else
+        {\color{green}\rule{\BoxKernTarget}{\dimexpr\ht\BoxCharOne+\dp\BoxCharOne}}%
+        \kern-\fboxrule\relax
+    \fi}%
+}
+
+\makeatletter
+\def\RenderText#1{\MBox[paletteB!50!white]{\let\last\relax\@tfor\cur:=#1\do{%
+    \ifcsname last\endcsname
+        \DrawChar{\last}{\cur}%
+    \fi
+    \xdef\last{\cur}%
+}\DrawChar{\last}{}}}

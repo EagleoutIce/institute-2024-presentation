@@ -1,0 +1,63 @@
+\def\TitleLetter#1{\scalebox{2}{\textbf{\fontsize{100pt}{100pt}\selectfont#1}}}
+\def\BannerLetter#1#2{\raisebox{-1cm}{\textbf{\fontsize{100pt}{100pt}\selectfont#2}}}
+
+\makeatletter
+% https://tex.stackexchange.com/a/545948
+\def\GlowWithColor#1#2#3#4{\pgfsys@beginscope% = pdf literal q
+\pgfsetroundjoin% = 1 J
+\pgfsetroundcap% = 1 j
+\pdfliteral{1 Tr}% no pgf alternative
+\foreach\ind in{#3,...,1}{%
+    \pgfmathsetmacro\per{(11-\ind)*5}%
+    \color{#1!\per}%
+    \pgfsetstrokeopacity{#4}%
+    \pgfsetlinewidth{1.75*\ind/#2}%
+    \rlap{\Text}%
+}%
+\pgfsys@endscope}
+\def\SetG{%
+\def\Text{G}%
+\GlowWithColor{green!86!black!75!purple!50!white}{1}{10}{.9}%
+\GlowWithColor{green!60!white}{2}{4}{.3}%
+\GlowWithColor{green!30!white}{2}{4}{.6}%
+\Text}
+
+\newsavebox\PHolder
+\newsavebox\SHolder
+\newsavebox\TTHolder
+\newsavebox\SecondE
+\newsavebox\SittingPengu
+\def\TitleImageLoad#1{%% target: 4cm
+\pingudefaults{eyes wink,body type=legacy}
+\savebox\TTHolder{\tikz{\pingu[wings wave, banner, banner={tt}, eyes angry, body type=tilt-right, right foot sit,banner height=1.33cm,banner font=\BannerLetter,:mix-draw=90!pingu@white!90!pingu@black]}}
+\pingudefaultsappend{:mix-all=90!pingu@white!90!pingu@black}
+\savebox\PHolder{\tikz{\pingu[xshift=2cm,yshift=-5mm,small,wings grab,headband=red,name=@p,staff left,staff left raise=-5.5mm, staff right,staff right raise=0mm,left item angle=-15,right item angle=-15]}}
+\savebox\SHolder{\tikz{\pingu[:back,body=pingu@main!90!gray,wings wave,body type=chubby,hair=orange]}}
+\savebox\SecondE{\scalebox{.7}{\rotatebox{30}{\TitleLetter{e}}}}
+\savebox\SittingPengu{\tikz{\pingu[feet=sit, eyes shiny,halo,heart,small,body type=chubby]}}
+\resizebox*!{4cm}{\begin{tikzpicture}
+   \pingu[left wing wave,construction helmet, tie=purple,name=T]
+   \pgfonlayer{very-background}
+      \draw[gray] ([xshift=-6cm]T-foot-right) -- ++(50cm,0);
+   \endpgfonlayer
+   \node[above right=-16mm] (@T) at (T-wing-left-tip) {\TitleLetter{T}};
+
+   \node[right=-5mm] (@Y) at(@T.south) {\rotatebox{200}{\TitleLetter{y}}};
+   \pgfonlayer{background}
+   \draw[gray,line cap=round] ([yshift=-3mm,xshift=1mm]@Y.north) -- ++(0,5.5cm) coordinate (@Top);
+   \endpgfonlayer
+   \node[right,yshift=3.3cm,xshift=7mm] (Y) at(@Y.south) {\rotatebox{-46}{\usebox\PHolder}};
+   \pgfonlayer{background}
+   \node[above,yshift=5mm,xshift=3.25mm] (@p) at(Y.east) {\TitleLetter{p}};
+   \endpgfonlayer
+   \node[right=-2.1cm,yshift=5.75mm] (@e) at(@p.south east) {\rotatebox{30}{\TitleLetter{e}}};
+   \node[right=3mm,yshift=13mm] (s) at(@e.north) {\rotatebox{90}{\TitleLetter{\texttt{S}}}};
+   \node[below] (@s) at (s.north|-@Top) {\rotatebox{180}{\usebox\SHolder}};
+
+   \node[right=1cm,yshift=7.75mm,draw=gray,rounded corners=2pt,ultra thick,inner sep=1pt,outer sep=0pt] (@e2) at(@p.south east-|@s.east) {\usebox\SecondE};
+   \node[above=-2mm] at(@e2.north) {\usebox\SittingPengu};
+
+   \node[above right,yshift=-1.5mm,xshift=1cm] (tt) at(@e2.east|-T-foot-right) {\usebox\TTHolder};
+   \node[right,yshift=-1.5mm] at(tt.east) {\TitleLetter{\rotatebox{-12}{I}\kern-16pt\smash{\(\Pi\)}\smash{\SetG}}};
+\end{tikzpicture}}%
+}

@@ -1,0 +1,198 @@
+\errorcontextlines99999
+\documentclass[aspectratio=169,usepdftitle=true,main=english]{beamer}
+
+\usepackage{xcolor-material}
+
+\colorlet{black}{MaterialBlack}
+\colorlet{gray}{MaterialGrey}
+\colorlet{red}{MaterialRed}
+\colorlet{purple}{MaterialPurple}
+\colorlet{blue}{MaterialBlue}
+\colorlet{cyan}{MaterialCyan}
+\colorlet{green}{MaterialGreen}
+\colorlet{orange}{MaterialOrange}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{microtype}
+
+\usepackage{etoolbox}
+\usepackage{customdice}
+\usepackage{booktabs}
+
+\makeatletter
+
+\usepackage{color-palettes}
+\usepackage{fancyqr}
+\usepackage[fontsize=14]{beamer-latex-pdfpc-notes}
+\usepackage[cpalette,encoding,defaultfont,fakeminted]{sopra-listings}
+\solLoadLanguage{fancytex,R}
+\solsetmintedstyle{plain}
+
+\usepackage{beamerthemedividing-lines}
+\SetColorProfile{42, 42, 42}{249, 166, 2}{137,64,75}
+\definecolor{btdl@color@background}{rgb}{252, 252, 252}
+
+\usepackage[backend=bibtex8,style=numeric]{biblatex}
+\usepackage{csquotes}
+\usepackage{tabularx,array}
+\let\say\enquote
+% \addbibresource{references.bib}
+% \outro{\printBibCommand}
+
+
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,backgrounds,shapes.symbols,decorations.pathreplacing,3d,graphs,shapes.multipart}
+\usepackage{forest}
+\usepackage{etoolbox,siunitx}
+\makeatletter
+\appto\input@path{{tikzpingus/tex/}{data/}}
+\usepackage[glows]{tikzpingus/tex/tikzpingus}
+\newsavebox\OutPingu
+\setbox\OutPingu=\hbox{\tikz{\pingu[lightsaber right,right wing wave, glow,devil wings=btdl@color@primary!80!black!96!purple,wool hat=darkgray,laptop left,eyes wink,blush,heart,body type=legacy,bow tie=pingu@blue]}}
+\PostPage{\begin{tikzpicture}[@O]
+   \node at(current page.center) {\usebox\OutPingu};
+\end{tikzpicture}}
+
+\setbeamerfont{subtitle}{size=\fontsize{19}{19},series=\sbfamily}
+
+% too short of a presentation
+\sectionbannerfalse
+
+\usepackage{fontawesome}
+
+\tikzset{
+    path image shift/.style={},
+    path image/.style={path picture={\node at ([path image shift]path picture bounding box.center) {#1};}},
+    U/.style={line cap=round, line join=round}
+}
+
+% TODO \temporal argument
+% \setbeamercovered{transparent=5}
+
+\def\PlaceFramenumberUpperLeft{}
+\def\TitlepageSlideAlign{c}
+\def\titlepage{%
+\begin{tikzpicture}[@O]
+   \node[align=left,font=\usebeamerfont{title}\usebeamercolor{title}] at (current page.center) {%
+      \MakeUppercase{\inserttitle}\endgraf
+   };
+   % \node[below left] at(current page.north east) {\color{gray}\href{https://github.com/EagleoutIce/ekg-cs-presentation}{\faGithub}};
+\end{tikzpicture}
+}
+
+\tikzset{
+   T/.style={text=gray,font=\scriptsize\sffamily},
+   @O/.style={overlay,remember picture}
+}
+\errorcontextlines9999
+\lstset{add to literate=
+   {<-}{{{\!\(\leftarrow\)\!}}}2
+}
+
+
+\def\CurrentSecText{Doing funny stuff with}
+\def\Sec#1#2{\def\CurrentSecText{#1}\section{#2}}
+\AtBeginSection{{%
+% \setbeamercolor{background canvas}{bg=gray}
+\begin{frame}
+   \begin{tikzpicture}[@O]
+      \node[font=\huge\bfseries,above right=1.25cm] (@) at (current page.south west) {\insertsection};
+      \node[above right,yshift=-2mm, gray,font=\scriptsize\sbfamily] at(@.north west) {\CurrentSecText};
+      % TODO: reuse the title!
+      \node[below left,text width=.55\linewidth,align=right] at(current page.north east) {\bfseries\color{gray!40}Docker, Computable Documents, and Love};
+   \end{tikzpicture}
+\end{frame}
+}}
+
+\newcounter{Learnings}
+\def\Learning#1#2{\refstepcounter{Learnings}%
+\protected@csxdef{Learning\theLearnings}{#1}%
+\begin{frame}
+   \hypertarget<2>{learning:\theLearnings}{}%
+   \begin{tikzpicture}[@O]
+      \node[gray,font=\scriptsize\sbfamily] (@) at(current page.center) {Learning \theLearnings};
+      \node[font=\huge\bfseries,below] at (@.south) {\only<2->{#1}};
+      \node[font=\scriptsize,gray,above right=2mm,text width=.42\linewidth,align=flush left] at(current page.south west) {\only<2->{#2}};
+   \end{tikzpicture}
+\end{frame}
+}
+
+\def\AllLearnings{%
+   \foreach\i in {1,...,\theLearnings} {%
+      \hyperlink{learning:\i}{\textcolor{gray}{\scriptsize Learning \i}}\\*
+         \strut\qquad\hyperlink{learning:\i}{\csuse{Learning\i}}\bigskip\par
+   }%
+}
+
+\setbeamertemplate{footline}{%
+\begin{tikzpicture}[@O]
+   \node[above left=1mm,font=\tiny\sbfamily,yshift=2pt,xshift=-.33pt] at(current page.south east) {\strut\thepage\strut};
+\end{tikzpicture}%
+}
+
+\usepackage{droidsansmono}
+\makeatletter
+\solSetStyle{basic}{\sol@ttfamily}%
+\solSetStyle{keywordA}{\bfseries}% TODO: sbfamily?
+\solSetStyle{keywordB}{\color{darkgray}}
+\solSetStyle{keywordC}{\color{darkgray}}
+\solSetStyle{numbers}{\color{darkgray}}
+% \soldisablenumhl
+
+\usetikzlibrary{tikzmark,shadows}
+\newcommand*\B[3][]{\tikzmarknode{#2}{\strut\blatex[#1]{#3}\strut}}
+\tikzset{DS/.style={rounded corners=2pt,fill=white,drop shadow={shadow xshift=.33ex,shadow yshift=-.33ex,opacity=.25,fill=gray},draw=gray}}
+\def\DoBox#1{\tikz[baseline=(@.base)]{\node[DS](@){#1};}}
+
+\newsavebox\FocusBox
+\newif\iffocusC \focusCtrue
+\NewEnviron{focus}{%
+   \setbox\FocusBox=\hbox{\parbox\linewidth{\iffocusC\begin{center}\BODY\end{center}\else\BODY\fi}}%
+   \begin{layout-full}\begin{tikzpicture}[@O]
+      \node at(current page.center) {\usebox\FocusBox};
+   \end{tikzpicture}\end{layout-full}%
+}
+\def\fo#1{\begin{colormixin}{30!white}#1\end{colormixin}}
+
+% TODO: improve?
+
+\usepackage{tcolorbox}
+\tcbuselibrary{listingsutf8,skins}
+\def\ExampleBoundingBox{(-.5,-.5) rectangle (4.5,2)}
+\newtcblisting{tikzexample}{
+   listing side text,blankest,listing options={language=lFancyTex,style=sol@SOPRA,xleftmargin=\z@,xrightmargin=\z@,numbers=none,numbersep=\z@,frame=none,rulecolor={},backgroundcolor={},columns=flexible,escapeinside={|*}{*|}},lefthand width=.6\linewidth,
+   % we lock the output rectangle so that it does not jump
+   before lower={
+      \tikzset{
+         every picture/.style={execute at end picture={
+            % mark the current bounding box
+            \draw[lightgray,rounded corners=2pt,opacity=.85,dotted] ([xshift=-2pt,yshift=-2pt]current bounding box.south west) rectangle ([xshift=2pt,yshift=2pt]current bounding box.north east);
+            \pgfonlayer{background}
+            \draw[DS,use as bounding box] \ExampleBoundingBox;
+            \endpgfonlayer
+         }}
+      }
+   }
+}
+
+\input{data/render-text}
+\usepackage{xspace}
+
+\usepackage{mathastext}
+\outro{\label{LAST}\raisebox{8pt}{\tikz{\node[text=white,opacity=.9] at (current page.north east) {\mdseries\scriptsize\href{https://github.com/EagleoutIce/institute-2023-presentation}{github.com/EagleoutIce/institute-2023-presentation}};}}}
+
+\setbeamerfont{section in toc}{size=\fontsize{10}{12},series=\bfseries}
+\setbeamertemplate{section in toc}{\strut\foreach\i in{1,...,\inserttocsectionnumber}{\hspace*{3.5em}}\textcolor{gray}{\inserttocsectionnumber.}\space\inserttocsection\bigskip}
+
+\tikzset{
+   K/.style={decoration={brace,mirror},semithick,decorate},
+   KO/.style={decoration={brace},semithick,decorate},
+   U-Over/.style={@O,gray,line cap=round,font=\small}
+}
+
+\newsavebox\CodeBox
+
+
+\errorcontextlines9999

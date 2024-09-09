@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+for old in $(ls $2); do
+    new=$(echo $old | sed -E -e "$1")
+    mv -v "$old" "$new"
+done
