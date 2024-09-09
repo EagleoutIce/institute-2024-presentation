@@ -1,31 +1,11 @@
-\Sec{TODO TODO TODO}{Docker Images}
+\Sec{Diving with picky whales}{Docker Images}
 
-{\def\pkg<#1>#2#3{\onslide<#1>{\parbox{12.5em}{\blatex{\\usepackage\{#2\}}} \textcolor{gray}{\small--- #3}}}
-\newsavebox\Pengu
-\setbox\Pengu=\hbox{\tikz{\pingu[eyes wink,body type=legacy,blush,wings grab,cup,feet sit,:mix-all=15!white]}}
+{
 \begin{frame}{}
-   \focusCfalse\begin{focus}
-      \only<10-|handout:0>{\begin{colormixin}{32!white}}%
-      \pkg<2->{microtype}{typographical refinements}\\
-      \pkg<3->{booktabs}{nicer looking tables}\\
-      \pkg<4->{siunitx}{format your units}\\
-      \pkg<5->{csquote}{context sensitive quotation}\bigskip\\
-      \pkg<6->{etoolbox}{programming-like constructs}\\
-      \pkg<7->{xstring}{powerful string manipulation}\\
-      \pkg<8->{xfp}{amazing fixed point arithmetic}\bigskip\\
-      \only<10-|handout:0>{\end{colormixin}}%
-      \pkg<9->{tikz}{\say{Ti\textit{k}Z ist kein Zeichenprogramm}}\\
-      % \pkg<10->{forest}{drawing cute trees}
-   \end{focus}
-   % gibt immer noch viel viel viel mehr
-   \begin{tikzpicture}[@O]
-      \onslide<11->{
-         \node[above right=1mm,scale=.225] (@) at(current page.south west) {\href{https://github.com/EagleoutIce/tikzpingus}{\usebox\Pengu}};
-         \node[right=1mm,opacity=.4,scale=.5] (@) at (@.east) {\href{https://github.com/EagleoutIce/tikzpingus}{\blatex{\\usepackage\{tikzpingus\}}  \textcolor{gray}{\small--- for love}}};}
-   \end{tikzpicture}
+  % https://scholar.google.de/scholar?hl=de&as_sdt=0%2C5&q=smells+in+docker+images+reproducibility&btnG=
 \end{frame}%
 }
 
-\Learning{Learn About (New) Packages}{Even \qty{10}{\percent} can save the world\ldots}
+\Learning{TODO}{TODO TODO}
 % and yes, some journals lock what is available, but often there are alternatives
 % tabu deprecated, aber immer und überall neue keine und große Pakete
