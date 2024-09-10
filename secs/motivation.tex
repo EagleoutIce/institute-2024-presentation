@@ -98,13 +98,12 @@
       ([yshift=-\LineHeight pt*#1+3.85mm]@.north east) coordinate (s) to[edge node={node[right=1.25mm] {\small#2}}]([yshift=-\LineHeight pt*#3+3.8mm]@.north east) coordinate (e);
    \fi
    \fill[@highlight,opacity=.15,rounded corners=.65pt] ([xshift=-1mm]s) rectangle ([xshift=1mm]e-|@.south west);
-
 }
 
 \begin{frame}{The Reproducibility Crisis}
    \begin{itemize}
       \itemsep8pt
-      \item<2-> We have a problem with reproducibility\supercite{baker20161}
+      \item<2-> We have a problem with reproducibility\supercite{baker20161,ioannidis2005most}
       \item<3-> Consequently, with FAIR research\supercite{barker2022introducing} \begin{itemize}
          \item Findable % (DOI, in registry, ....)
          \item Accessible % (open access, ...)
@@ -115,6 +114,7 @@
    \begin{tikzpicture}[@O]
       \node[FCite] at(current page.south west) {%
       \bottomcite{baker20161}\\
+      \bottomcite{ioannidis2005most} \\
       \bottomcite{barker2022introducing}
       };
    \end{tikzpicture}

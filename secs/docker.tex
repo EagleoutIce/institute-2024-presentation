@@ -1,11 +1,34 @@
-\Sec{Diving with picky whales}{Docker Images}
+\Sec{Diving with picky whales}{Docker Images and Projects}
 
-{
-\begin{frame}{}
-  % https://scholar.google.de/scholar?hl=de&as_sdt=0%2C5&q=smells+in+docker+images+reproducibility&btnG=
-  \url{https://qcmb.psychopen.eu/index.php/qcmb/article/view/3763}
-\end{frame}%
-}
+\begin{frame}[c]
+\begin{layout-full}
+  \centering
+  \onslide<2->{\includegraphics[width=.85\linewidth]{img/reproducible-workflows.png}}
+\end{layout-full}
+\begin{tikzpicture}[overlay,remember picture]
+  \node[FCite] at(current page.south west) {Aus: \bottomcite{peikert2021reproducible}};
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}
+  \begin{itemize}[<+(1)->]
+    \item Lock all used versions
+    \item Make sure you persist the \texttt{tar} archive\\*
+          \texttt{docker save -o image.tar image}
+    \item 
+  \end{itemize}
+  % 2005 ioannidis
+  % 2019 NASEM report  10.17226/25303
+
+   % compilers change, tool is implemented further. 
+\end{frame}
+
+% {
+% \begin{frame}{}
+%   % https://scholar.google.de/scholar?hl=de&as_sdt=0%2C5&q=smells+in+docker+images+reproducibility&btnG=
+%   \url{https://qcmb.psychopen.eu/index.php/qcmb/article/view/3763}
+% \end{frame}%
+% }
 
 \Learning{TODO}{TODO TODO}
 % and yes, some journals lock what is available, but often there are alternatives
