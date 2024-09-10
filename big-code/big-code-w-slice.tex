@@ -1,0 +1,381 @@
+\input{preamble.cfg}
+\usepackage{xxcolor}
+\soldisablenumhl
+\begin{document}
+\preview\footnotesize
+\HookColor
+\begin{minted}[escapeinside={!!*}{*!!}]{void}
+!!*\DoGray*!!#R version 4.0.5 (2021-03-31)
+!!*\DoColor*!!library("groundhog")
+p <- c("tidyverse", "broom", "svglite", "gdtools", "GenSA", "gghighlight")
+groundhog.library(p, "2021-02-15")!!*\DoGray*!!
+rm(p)
+
+# latvina for cultivar names
+sessionInfo(); Sys.setlocale("LC_ALL", "Latvian") # lv valoda
+
+# set the data directory and load workspace
+setwd("G:/Shared drives/Fenologija/Raksti/abeles/Zenodo/")
+load("Apple_Pure_phenology_R_workspace_image.RData")
+
+# -----------------------------------------
+# scirpt to recreate components included in of "Apple_Pure_phenology_R_workspace_image.RData"
+{
+# --------------------------
+# phenology data subset having at least 14 observations owerlaping wiht meteorology data set
+{
+   dM <- d %>%
+      filter(Year %in% (meteoH$e_obs$Year))
+   dM <- dM %>%
+      group_by(Variety) %>%
+      summarize(N = n()) %>%
+      arrange(N) %>%
+      filter(N >= 14) %>% # 12 skirnes
+      select(-N) %>%
+      left_join(dM)
+}
+
+# ----------------------
+# FUNCTION definitinos
+# phenology model deifned as functino, see Kalvans et al, 2015, DDcos model for details
+{
+   # parameter set for model testing
+   pari = c(Tb = 10.1, DD = 200.1) # Tb - base temperature; DD - cumulative degree days for phase onset
+   # lookup table for sin distribution
+   !!*\DoColor*!!sadalijums!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!round!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!(sin(!!*\DoColor*!!seq(!!*\DoColor*!!0!!*\DoReset*!!!!*\DoGray*!!!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!1!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!0.01!!*\DoReset*!!!!*\DoGray*!!) *2 *!!*\DoColor*!!pi!!*\DoReset*!!!!*\DoGray*!!) + 1)/2, !!*\DoColor*!!2!!*\DoReset*!!!!*\DoGray*!!)
+
+   # elementary function, start of heat sum accumulation Januar 1
+   !!*\DoColor*!!DDsin_el!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!function!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!pari!!*\DoReset*!!!!*\DoGray*!!,
+                        !!*\DoColor*!!meteoi!!*\DoReset*!!!!*\DoGray*!!,
+                        !!*\DoColor*!!sadalijums!!*\DoReset*!!!!*\DoGray*!!) {
+      # pari - model parameters (Tb and DD)
+      # meteoi - meteorology data
+      # sadalijums - lookup table for sin distributino
+      !!*\DoColor*!!a!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!meteoi!!*\DoReset*!!!!*\DoGray*!! !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!mutate!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Tspread!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!Tmax!!*\DoReset*!!!!*\DoGray*!! - !!*\DoColor*!!Tmin!!*\DoReset*!!!!*\DoGray*!!,
+               !!*\DoColor*!!DD!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!map2!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Tspread!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!Tmin!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!~(sadalijums * !!*\DoReset*!!!!*\DoGray*!!.x!!*\DoReset*!!!!*\DoGray*!!) + !!*\DoColor*!!.y!!*\DoReset*!!!!*\DoGray*!!),
+               !!*\DoColor*!!DD!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!map!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!DD!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!~(. -!!*\DoColor*!!!!*\DoReset*!!!!*\DoGray*!!pari!!*\DoReset*!!!!*\DoGray*!![!!*\DoColor*!!"Tb"!!*\DoReset*!!!!*\DoGray*!!])),
+               !!*\DoColor*!!DD!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!map_dbl!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!DD!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!~replace(!!*\DoColor*!!.!!*\DoReset*!!!!*\DoGray*!!m, !!*\DoColor*!!. < 0!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!0!!*\DoReset*!!!!*\DoGray*!!) !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!! !!*\DoColor*!!sum!!*\DoReset*!!!!*\DoGray*!!()),
+               !!*\DoColor*!!DD!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!DD!!*\DoReset*!!!!*\DoGray*!! / !!*\DoColor*!!length!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!sadalijums!!*\DoReset*!!!!*\DoGray*!!),
+               !!*\DoColor*!!DD!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!cumsum!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!DD!!*\DoReset*!!!!*\DoGray*!!)) !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!filter!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!DD >= !!*\DoReset*!!!!*\DoGray*!!mpari!!*\DoReset*!!!!*\DoGray*!![!!*\DoColor*!!"DD"!!*\DoReset*!!!!*\DoGray*!!]) !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!filter!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!DoY == !!*\DoReset*!!!!*\DoGray*!!min!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!DoY!!*\DoReset*!!!!*\DoGray*!!)) !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!select!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Date!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!DoY!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!DD!!*\DoReset*!!!!*\DoGray*!!) !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!rename!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Analysis_DoY!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!DoY!!*\DoReset*!!!!*\DoGray*!!)
+      !!*\DoColor*!!return!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!a!!*\DoReset*!!!!*\DoGray*!!)
+   }
+   # elementary function test
+   DDsin_el(pari = pari,
+            meteoi = meteo$e_obs$data[[1]],
+            sadalijums = sadalijums)
+
+   # applyign the elementary functino to full data set
+   !!*\DoColor*!!DDsin!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!function!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!pari!!*\DoReset*!!!!*\DoGray*!!,
+                     !!*\DoColor*!!sadalijums!!*\DoReset*!!!!*\DoGray*!!,
+                     !!*\DoColor*!!dd!!*\DoReset*!!!!*\DoGray*!!,
+                     !!*\DoColor*!!meteod!!*\DoReset*!!!!*\DoGray*!!) {
+      # dd - phenology data,
+      # meteod - meteorology data to be used
+      # pari - phenology model paramters (Tb, DD)
+      # Tb - bazes temepratura
+
+      !!*\DoColor*!!inner_join!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!dd!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!meteod!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!by!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!c!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!"Year"!!*\DoReset*!!!!*\DoGray*!!)) !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!filter!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!!is.na(!!*\DoReset*!!!!*\DoGray*!!1mdata!!*\DoReset*!!!!*\DoGray*!!)) !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!mutate!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Analysis_DoY!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!purrr::map!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!data!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!~DDsin_el(!!*\DoColor*!!pari!!*\DoReset*!!!!*\DoGray*!!!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!pari!!*\DoReset*!!!!*\DoGray*!!,
+                                                         !!*\DoColor*!!meteoi!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!.!!*\DoReset*!!!!*\DoGray*!!,
+                                                         !!*\DoColor*!!sadalijums!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!sadalijums!!*\DoReset*!!!!*\DoGray*!!))) !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!unnest!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!cols!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!c!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Analysis_DoY!!*\DoReset*!!!!*\DoGray*!!))
+   }
+
+   # test the model for furll data set
+   DDsin(pari = pari,
+         !!*\DoColor*!!sadalijums!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!sadalijums!!*\DoReset*!!!!*\DoGray*!!,
+         dd = d[c(1:10),],
+         meteod = meteo$e_obs)
+
+   # calculating the model preformance indicators
+   # (Nstat - number of data points; ME - mean erro; MAE - mean absolute error; RMSE - root mean squared error)
+   !!*\DoColor*!!DDsin_stat!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!function!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!pari!!*\DoReset*!!!!*\DoGray*!!,
+                           !!*\DoColor*!!stats!!*\DoReset*!!!!*\DoGray*!!,
+                           !!*\DoColor*!!sadalijums!!*\DoReset*!!!!*\DoGray*!!,
+                           !!*\DoColor*!!dd!!*\DoReset*!!!!*\DoGray*!!,
+                           !!*\DoColor*!!meteod!!*\DoReset*!!!!*\DoGray*!!) {
+
+      # pari - parameter set for phenology model (Tb, DD)
+      # stats - to be returned, charatet vector, any combinatio of Nstat, ME, MAE, RMSE
+      # sadalijums - sin distribution lookutable
+      # dd - phenology data
+      # meteod - meteorology data
+
+      !!*\DoColor*!!analyse!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!DDsin!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!pari!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!pari!!*\DoReset*!!!!*\DoGray*!!,
+                     !!*\DoColor*!!sadalijums!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!sadalijums!!*\DoReset*!!!!*\DoGray*!!,
+                     !!*\DoColor*!!dd!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!dd!!*\DoReset*!!!!*\DoGray*!!,
+                     !!*\DoColor*!!meteod!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!meteod!!*\DoReset*!!!!*\DoGray*!!)
+      !!*\DoColor*!!statistics!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!analyse!!*\DoReset*!!!!*\DoGray*!! !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!ungroup!!*\DoReset*!!!!*\DoGray*!!() !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!mutate!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!dif!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!Full_bloom_yd!!*\DoReset*!!!!*\DoGray*!! - !!*\DoColor*!!Analysis_DoY!!*\DoReset*!!!!*\DoGray*!!) !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!summarize!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Nstat!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!n!!*\DoReset*!!!!*\DoGray*!!(),
+                  !!*\DoColor*!!ME!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!mean!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!dif!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!na.rm!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!T!!*\DoReset*!!!!*\DoGray*!!),
+                  !!*\DoColor*!!MAE!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!mean!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!abs(!!*\DoReset*!!!!*\DoGray*!!!!*\DoColor*!!dif!!*\DoReset*!!!!*\DoGray*!!), !!*\DoColor*!!na.rm!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!T!!*\DoReset*!!!!*\DoGray*!!),
+                  !!*\DoColor*!!RMSE!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!sqrt!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!mean(!!*\DoColor*!!dif^2!!*\DoReset*!!!!*\DoGray*!![0m!!*\DoGray*!!, !!*\DoColor*!!na.rm!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!T!!*\DoReset*!!!!*\DoGray*!!)))
+
+      !!*\DoColor*!!statistics!!*\DoReset*!!!!*\DoGray*!! !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!select!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!contains(!!*\DoReset*!!!!*\DoGray*!!stats!!*\DoReset*!!!!*\DoGray*!!)) !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!unlist!!*\DoReset*!!!!*\DoGray*!!()
+   }
+   DDsin_stat(pari = pari,
+               stats = c("ME", "RMSE"),
+               !!*\DoColor*!!sadalijums!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!sadalijums!!*\DoReset*!!!!*\DoGray*!!,
+               dd = d[c(1:20), ],
+               meteod = meteo$e_obs)
+
+}
+
+# model optimizatino
+{
+   !!*\DoColor*!!DDsinOpt!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!function!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!pari!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!dd!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!meteod!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!maxit!!*\DoReset*!!!!*\DoGray*!!,
+                        !!*\DoColor*!!loweri!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!upperi!!*\DoReset*!!!!*\DoGray*!!) {
+
+      # pari - phenology model initial paramters (Tb, DD)
+      # dd - phenology data
+      # meteod - meteorological data
+      # maxit - maximum number of GenSA iterations, set to 1 for testing
+      # loweri - lower bound of model parameter range  (Tb, DD)
+      # upperi - upper bound of model parameter range  (Tb, DD)
+
+      # if pari == NA a random set is generated
+      if (!!*\DoColor*!!any!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!is.na(!!*\DoReset*!!!!*\DoGray*!!mpari!!*\DoReset*!!!!*\DoGray*!!))) {
+      !!*\DoColor*!!pari!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!runif!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!2!!*\DoReset*!!!!*\DoGray*!!) * (!!*\DoColor*!!upperi!!*\DoReset*!!!!*\DoGray*!! - !!*\DoColor*!!loweri!!*\DoReset*!!!!*\DoGray*!!) + !!*\DoColor*!!loweri!!*\DoReset*!!!!*\DoGray*!!
+      }
+
+      # test if the phenology and meteorology data oweralap in time
+      if (!!*\DoColor*!!any!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!dd!!*\DoColor*!!$!!*\DoReset*!!!!*\DoGray*!!mYear !!*\DoColor*!!%in%!!*\DoReset*!!!!*\DoGray*!! !!*\DoColor*!!meteod!!*\DoReset*!!!!*\DoGray*!!!!*\DoColor*!!$!!*\DoReset*!!!!*\DoGray*!!Year)) {
+      print(Sys.time())
+
+      print("DDsinOpt")
+      !!*\DoColor*!!a!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!GenSA::GenSA!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!par!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!pari!!*\DoReset*!!!!*\DoGray*!!,
+                        !!*\DoColor*!!fn!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!DDsin_stat!!*\DoReset*!!!!*\DoGray*!!,
+                        !!*\DoColor*!!lower!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!loweri!!*\DoReset*!!!!*\DoGray*!!,
+                        !!*\DoColor*!!upper!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!upperi!!*\DoReset*!!!!*\DoGray*!!,
+                        !!*\DoColor*!!stats!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!c!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!"RMSE"!!*\DoReset*!!!!*\DoGray*!!),
+                        !!*\DoColor*!!sadalijums!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!sadalijums!!*\DoReset*!!!!*\DoGray*!!,
+                        !!*\DoColor*!!dd!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!dd!!*\DoReset*!!!!*\DoGray*!!,
+                        !!*\DoColor*!!meteod!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!meteod!!*\DoReset*!!!!*\DoGray*!!,
+                        !!*\DoColor*!!control!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!list!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!maxit!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!maxit!!*\DoReset*!!!!*\DoGray*!!,
+                                       !!*\DoColor*!!verbose!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!T!!*\DoReset*!!!!*\DoGray*!!,
+                                       !!*\DoColor*!!temperature!!*\DoReset*!!!!*\DoGray*!! = 10000,
+                                       !!*\DoColor*!!smooth!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!T!!*\DoReset*!!!!*\DoGray*!!,
+                                       !!*\DoColor*!!simple.function!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!T!!*\DoReset*!!!!*\DoGray*!!))
+
+
+      !!*\DoColor*!!return!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!a$par!!*\DoReset*!!!!*\DoGray*!!)
+      } else {
+      print("meteoorology and phneology data do not owerlap!")
+      !!*\DoColor*!!c!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Tb!!*\DoReset*!!!!*\DoGray*!! = NA, !!*\DoColor*!!DD!!*\DoReset*!!!!*\DoGray*!! = NA)
+      }
+   }
+   # test the optimizatino function
+   DDsinOpt(pari = NA, dd = d[c(200:230),], meteod = meteoH$e_obs, maxit = 1,
+            lower = c(Tb = 0, DD = 100), upper = c(Tb = 10, DD = 400))
+   DDsinOpt(pari = c(Tb = 10.1, DD = 200.1), dd = d[c(220:235),], meteod = meteoH$e_obs, maxit = 2,
+            lower = c(Tb = 0, DD = 100), upper = c(!!*\DoColor*!!Tb!!*\DoReset*!!!!*\DoGray*!! = 11, DD = 400))
+
+}
+
+# -----------------------------------------
+# MODEL OPTIMIZATION
+# model optimization by cultivar and meteorology data source, to compare the model fit between data sources
+{
+   # emty object to store optimizatio results
+   rez = c()
+   # initial parameter set;
+   pari = c(Tb = NA, DD = NA)
+   for(!!*\DoColor*!!i!!*\DoReset*!!!!*\DoGray*!! in !!*\DoColor*!!c!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!1:100!!*\DoReset*!!!!*\DoGray*!!)) {
+      print(i)
+
+      di <- dM %>%
+      group_by(Variety) %>%
+      nest() %>%
+      mutate(!!*\DoColor*!!data!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!map!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!data!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!~mutate(!!*\DoColor*!!.!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!Cal!!*\DoReset*!!!!*\DoGray*!! = !!*\DoReset*!!!!*\DoGray*!!as.logical!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!rbinom(!!*\DoColor*!!dim(!!*\DoReset*!!!!*\DoGray*!!!!*\DoReset*!!!!*\DoGray*!!.!!*\DoReset*!!!!*\DoGray*!!)[1], !!*\DoColor*!!size!!*\DoReset*!!!!*\DoGray*!! = 1, !!*\DoColor*!!prob!!*\DoReset*!!!!*\DoGray*!! = 0.5)))),
+               Ncal = map_dbl(data, ~summarize(., Ncal = sum(Cal)) %>% unlist()))
+
+      for (!!*\DoColor*!!n!!*\DoReset*!!!!*\DoGray*!! in !!*\DoColor*!!names!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!meteoH!!*\DoReset*!!!!*\DoGray*!!)) {
+      print(n)
+      a <- di %>%
+         mutate(Gensa = map(data, ~DDsinOpt(pari = pari, dd = filter(., Cal), meteod = meteoH[[n]], maxit = 5,
+                                             lower = c(Tb = 0, DD = 100), upper = c(Tb = 11, DD = 400)) %>%
+                              t() %>% as.data.frame()),
+               Stat = map2(Gensa, data, ~DDsin_stat(pari = unlist(.x),
+                                                      stats = c("Nstat" ,"ME", "MAE","RMSE"),
+                                                      dd = .y %>% filter(!Cal),
+                                                      sadalijums = sadalijums,
+                                                      meteod = meteoH[[n]])  %>%
+                              t() %>% as.data.frame())) %>%
+         select(Variety, Ncal, Gensa, Stat) %>%
+         unnest(cols = c(Gensa, Stat)) %>%
+         mutate(Meteo = n)
+      rez = bind_rows(rez, a)
+      rm(i, a)
+
+      # write_rds(rez, "G:/Shared drives/Fenologija/Raksti/abeles/rez_R/fit_5_fix_t0_100_MeteoTest_min14.rds")
+      }
+      rm(n,i)
+   }
+   # save the results
+   write_rds(rez, "G:/Shared drives/Fenologija/Raksti/abeles/rez_R/fit_all.rds")
+   # cehck the results
+   tail(rez)
+   meteo_comparison <- rez; rm(rez)
+}
+
+# model optimization with e-obs data set lumped all varieties
+{
+   # emty object to store optimizatio results
+   !!*\DoColor*!!rez!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!c!!*\DoReset*!!!!*\DoGray*!!()
+   # initial parameter set;
+   !!*\DoColor*!!pari!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!c!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Tb!!*\DoReset*!!!!*\DoGray*!! = NA, !!*\DoColor*!!DD!!*\DoReset*!!!!*\DoGray*!! = NA)
+   for(!!*\DoColor*!!i!!*\DoReset*!!!!*\DoGray*!! in !!*\DoColor*!!c!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!1:100!!*\DoReset*!!!!*\DoGray*!!)) {
+      print(i)
+
+      !!*\DoColor*!!di!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!d!!*\DoReset*!!!!*\DoGray*!! !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!group_by!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Variety!!*\DoReset*!!!!*\DoGray*!!) !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!nest!!*\DoReset*!!!!*\DoGray*!!() !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!mutate!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!data!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!map!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!data!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!~mutate(!!*\DoColor*!!.!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!Cal!!*\DoReset*!!!!*\DoGray*!! = !!*\DoReset*!!!!*\DoGray*!!as.logical!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!rbinom(!!*\DoColor*!!dim(!!*\DoReset*!!!!*\DoGray*!!!!*\DoReset*!!!!*\DoGray*!!.!!*\DoReset*!!!!*\DoGray*!!)[1], !!*\DoColor*!!size!!*\DoReset*!!!!*\DoGray*!! = 1, !!*\DoColor*!!prob!!*\DoReset*!!!!*\DoGray*!! = 0.5)))),
+               !!*\DoColor*!!Ncal!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!map_dbl!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!data!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!~summarize(!!*\DoColor*!!.!!*\DoReset*!!!!*\DoGray*!!, !!*\DoReset*!!!!*\DoGray*!!3Ncal!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!sum!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Cal!!*\DoReset*!!!!*\DoGray*!!)) !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!! !!*\DoColor*!!unlist!!*\DoReset*!!!!*\DoGray*!!()))
+
+
+      !!*\DoColor*!!a!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!di!!*\DoReset*!!!!*\DoGray*!! !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!mutate!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Gensa!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!map!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!data!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!~DDsinOpt(!!*\DoReset*!!!!*\DoGray*!!1mpari!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!pari!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!dd!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!filter!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!.!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!Cal!!*\DoReset*!!!!*\DoGray*!!), !!*\DoColor*!!meteod!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!meteoH!!*\DoReset*!!!!*\DoGray*!![[!!*\DoColor*!!n!!*\DoReset*!!!!*\DoGray*!!]], !!*\DoColor*!!maxit!!*\DoReset*!!!!*\DoGray*!! = 5,
+                                          !!*\DoColor*!!lower!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!c!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Tb!!*\DoReset*!!!!*\DoGray*!! = 0, !!*\DoColor*!!DD!!*\DoReset*!!!!*\DoGray*!! = 100), !!*\DoColor*!!upper!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!c!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Tb!!*\DoReset*!!!!*\DoGray*!! = 11, !!*\DoColor*!!DD!!*\DoReset*!!!!*\DoGray*!! = 400)) !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+                           !!*\DoColor*!!t!!*\DoReset*!!!!*\DoGray*!!() !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!! !!*\DoColor*!!as.data.frame!!*\DoReset*!!!!*\DoGray*!!()),
+               !!*\DoColor*!!Stat!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!map2!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Gensa!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!data!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!~DDsin_sta!!*\DoReset*!!!!*\DoGray*!!t(!!*\DoColor*!!pari!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!unlist!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!.x!!*\DoReset*!!!!*\DoGray*!!),
+                                                   !!*\DoColor*!!stats!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!c!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!"Nstat"!!*\DoReset*!!!!*\DoGray*!! ,!!*\DoColor*!!"ME"!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!"MAE"!!*\DoReset*!!!!*\DoGray*!!,!!*\DoColor*!!"RMSE"!!*\DoReset*!!!!*\DoGray*!!),
+                                                   !!*\DoColor*!!dd!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!.y!!*\DoReset*!!!!*\DoGray*!! !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!! !!*\DoColor*!!filter!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!!Cal!!*\DoReset*!!!!*\DoGray*!!),
+                                                   !!*\DoColor*!!sadalijums!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!sadalijums!!*\DoReset*!!!!*\DoGray*!!,
+                                                   !!*\DoColor*!!meteod!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!meteo!!*\DoReset*!!!!*\DoGray*!!$e_obs)  !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+                           !!*\DoColor*!!t!!*\DoReset*!!!!*\DoGray*!!() !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!! !!*\DoColor*!!as.data.frame!!*\DoReset*!!!!*\DoGray*!!())) !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!select!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Variety!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!Ncal!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!Gensa!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!Stat!!*\DoReset*!!!!*\DoGray*!!) !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!unnest!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!cols!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!c!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Gensa!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!Stat!!*\DoReset*!!!!*\DoGray*!!)) !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!mutate!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!Meteo!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!n!!*\DoReset*!!!!*\DoGray*!!)
+      !!*\DoColor*!!rez!!*\DoReset*!!!!*\DoGray*!! = !!*\DoColor*!!bind_rows!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!rez!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!a!!*\DoReset*!!!!*\DoGray*!!)
+      rm(i, a)
+
+      }
+   rm(n,i)
+   # save the results
+   write_rds(rez, "G:/Shared drives/Fenologija/Raksti/abeles/rez_R/e_obs_noVariety.rds")
+   # cehck the results
+   tail(rez)
+   !!*\DoColor*!!e_obs_noVariety!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!rez!!*\DoReset*!!!!*\DoGray*!!; rm(rez)
+}
+}
+
+# -----------------------------------------
+# ILUSTRATIONS
+# Figure 1 periodu medians
+{
+   dMed_year <- d %>%
+      group_by(Year) %>%
+      summarize(Med = median(Full_bloom_yd))
+
+   dMed_periods <-
+      tibble(Per = c("I", "II", "III"), From = c(1959, 1976, 2002), To = c(1967, 1987, 2019)) %>%
+      mutate(Med = map2_dbl(From, To, ~filter(d, Year >= .x, Year <= .y) %>%
+                              summarize(Med = median(Full_bloom_yd)) %>% pull())) %>%
+      gather(Par, Value, -Per, -Med)
+   print(dMed_periods)
+
+   a <- d %>%
+      ggplot(aes(Year, Full_bloom_yd)) +
+      geom_jitter(shape = 1, width = 0.2, height = 0) +
+      geom_line(data = dMed_periods, mapping = aes(Value, Med, group = Per), lwd = 2, alpha = 0.5) +
+      scale_x_continuous(minor_breaks = c(1957, 1958, 1959:2019, 2020, 2021),
+                        breaks = seq(1960, 2015, 5)) +
+      ylab("Full flowering, day of the year")
+   print(a)
+
+   rm(dMed_year, dMed_periods, a)
+}
+
+# Figure 2 meteo salidzinajums
+{
+   a <- meteo_salidzinajums %>%
+      mutate(Meteo = replace(Meteo, Meteo == "meteo.lv", "Stende meteorological station")) %>%
+      select(-Ncal, -Nstat, -Tb, -DD) %>%
+      mutate(Variety = str_replace(Variety, " ", "\n")) %>%
+      gather(Error, Value_e, -Variety, -Meteo) %>%
+      ggplot(aes(Variety, Value_e, fill = Meteo)) +
+      geom_boxplot() +
+      facet_wrap(~Error, scales = "free") +
+      ylab("Model error, days") +
+      labs(fill = 'Meteorological data source') +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+            legend.position = "bottom")
+   print(a)
+   rm(a)
+
+   # statistika
+   meteo_salidzinajums %>%
+      select(-Ncal, -Nstat, -Tb, -DD) %>%
+      gather(Error, Value_e, -Variety, -Meteo) %>%
+      group_by(Error, Meteo) %>%
+      summarize(Med = median(Value_e)) %>%
+      as.data.frame()
+}
+
+# Figure 3
+# Tb un DD e-obsam, visual inspection
+{
+
+   !!*\DoColor*!!a!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!e_obs_noVariety!!*\DoReset*!!!!*\DoGray*!! !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!ggplot!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!aes(!!*\DoReset*!!!!*\DoGray*!!3Tb!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!DD!!*\DoReset*!!!!*\DoGray*!!)) +
+      !!*\DoColor*!!geom_point!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!shape!!*\DoReset*!!!!*\DoGray*!! = 1)
+   !!*\DoColor*!!a!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!ggplotGrob!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!a!!*\DoReset*!!!!*\DoGray*!!)
+   !!*\DoColor*!!b!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!e_obs_noVariety!!*\DoReset*!!!!*\DoGray*!! !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!ggplot!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!aes(!!*\DoReset*!!!!*\DoGray*!!1mTb!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!RMSE!!*\DoReset*!!!!*\DoGray*!!)) +
+      !!*\DoColor*!!geom_point!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!shape!!*\DoReset*!!!!*\DoGray*!! = 1)
+   !!*\DoColor*!!b!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!ggplotGrob!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!b!!*\DoReset*!!!!*\DoGray*!!)
+   !!*\DoColor*!!cc!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!e_obs_noVariety!!*\DoReset*!!!!*\DoGray*!! !!*\DoColor*!!%>%!!*\DoReset*!!!!*\DoGray*!!
+      !!*\DoColor*!!ggplot!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!aes(!!*\DoReset*!!!!*\DoGray*!!1mRMSE!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!DD!!*\DoReset*!!!!*\DoGray*!!)) +
+      !!*\DoColor*!!geom_point!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!shape!!*\DoReset*!!!!*\DoGray*!! = 1)
+   !!*\DoColor*!!cc!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!ggplotGrob!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!cc!!*\DoReset*!!!!*\DoGray*!!)
+   !!*\DoColor*!!blank!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!ggplot!!*\DoReset*!!!!*\DoGray*!!() + !!*\DoColor*!!theme_void!!*\DoReset*!!!!*\DoGray*!!()
+   !!*\DoColor*!!blank!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!ggplotGrob!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!blank!!*\DoReset*!!!!*\DoGray*!!)
+
+
+   !!*\DoColor*!!abc!!*\DoReset*!!!!*\DoGray*!! <- !!*\DoColor*!!gridExtra::arrangeGrob!!*\DoReset*!!!!*\DoGray*!!(!!*\DoColor*!!cbind(!!*\DoColor*!!rbin!!*\DoReset*!!!!*\DoGray*!!d(!!*\DoColor*!!a!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!b!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!size!!*\DoReset*!!!!*\DoGray*!! = "first"),
+                                       !!*\DoColor*!!rbind(!!*\DoColor*!!cc!!*\DoReset*!!!!*\DoGray*!!, !!*\DoReset*!!!!*\DoGray*!!!!*\DoColor*!!blank!!*\DoReset*!!!!*\DoGray*!!, !!*\DoColor*!!size!!*\DoReset*!!!!*\DoGray*!! = "first"),
+                                       !!*\DoColor*!!size!!*\DoReset*!!!!*\DoGray*!! = "first"))
+   grid::grid.newpage()
+   grid::grid.draw(!!*\DoColor*!!abc!!*\DoReset*!!!!*\DoGray*!!)
+
+   rm(a, b, cc, abc, blank)
+}
+
+# a single best paramter (Tb, DD) set
+{
+   e_obs_noVariety_global <-
+      e_obs_noVariety %>%
+      rename(Nstat_l = Nstat,ME_l = ME, MAE_l = MAE,  RMSE_l = RMSE) %>%
+      mutate(stats = map2(Tb, DD, ~ DDsin_stat(pari = c(Tb = .x, DD = .y),
+                                             stats = c("Nstat", "ME", "MAE", "RMSE"),
+                                             sadalijums = sadalijums,
+                                             dd = d,
+                                             meteod = meteo$e_obs)))
+
+   e_obs_noVariety_global %>%
+      mutate(stats = map(stats, ~array(., c(1, length(.)), dimnames = list(NULL, names(.))) %>% as.data.frame())) %>%
+      unnest(cols = c(stats)) %>%
+      arrange(RMSE) %>% as.data.frame()
+
+   z <- e_obs_noVariety %>%
+      filter(Tb >= 2.5, Tb <= 4.0) %>%
+      arrange(RMSE)
+
+   as.data.frame(z)
+   range(z$DD)
+}
+rm(z, e_obs_noVariety_global)!!*\DoReset*!!
+\end{minted}
+\endpreview
+\end{document}

@@ -1,0 +1,31 @@
+\documentclass{article}
+
+\usepackage{graphicx}
+\usepackage{fontawesome}
+\usepackage{tikz}
+
+\tikzset{
+    path image shift/.style={}, % scale patch just for white padding
+    path image/.style 2 args={path picture={\node[scale=.98] at ([path image shift]path picture bounding box.center) {\includegraphics[width=#2]{#1}};}}
+}
+
+\usepackage[active,tightpage]{preview}
+
+\newsavebox\PresentBox
+\def\PlaceFrame#1{%
+   \raisebox{\dimexpr-.5\height+.28em}{\setbox\PresentBox=\hbox{\includegraphics[width=.35\linewidth]{../images/#1}}%
+   \tikz{%
+      \draw[draw=lightgray,rounded corners=3pt,path image={../images/#1}{.35\linewidth}]
+         (0,0) rectangle ++(.35\linewidth,\ht\PresentBox+\dp\PresentBox);%
+   }}%
+}
+
+\begin{document}
+\preview
+\vspace*{1em}
+
+\PlaceFrame{slice-before.png}
+\quad\faCaretRight\quad
+\PlaceFrame{slice-after.png}
+\endpreview
+\end{document}

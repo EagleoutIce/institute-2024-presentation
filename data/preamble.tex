@@ -43,16 +43,42 @@
 
 
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta,backgrounds,shapes.symbols,decorations.pathreplacing,3d,graphs,shapes.multipart}
+\usetikzlibrary{arrows.meta,backgrounds,shapes.symbols,decorations.pathreplacing,3d,graphs,shapes.multipart,spy}
+
+\usepackage{code-animation/code-animation}
+\SetCodeAnimationFadeOutMixin{!12!white}
+\CodeAnimationsWithFadeOut
+
+\colorlet{FCiteGray}{gray}
+\colorlet{paletteA}{red}
+
+\tikzset{
+  FCite/.style={FCiteGray,font=\tiny\sffamily,above right,align=left,execute at begin node={\colorlet{ul@line@color}{paletteA!50!white}},scale=.65},
+  @O/.style={overlay, remember picture}
+}
+
+\DeclareCiteCommand\citepublisher
+  {\boolfalse{citetracker}% supplemented from moewe's answer: https://tex.stackexchange.com/a/207676/
+   \boolfalse{pagetracker}}
+  {\printlist{publisher}}
+  {\multicitedelim}
+  {}
+
+\def\supercite#1{\textsuperscript{\textcolor{gray}{\cite{#1}}}}
+% is it right to print the publisher? well probably not but i do not want to instantiate a complex fallback system
+% and this field i can control in the bib!
+\def\bottomcite#1{\bottomciteraw{#1}{\citeauthor*{#1}, \citetitle{#1} (\citeyear{#1}, \citepublisher{#1})}}
+\def\bottomciteraw#1#2{\makebox[1.45em][r]{\cite{#1}}~#2}
+
 \usepackage{forest}
 \usepackage{etoolbox,siunitx}
 \makeatletter
 \appto\input@path{{tikzpingus/tex/}{data/}}
 \usepackage[glows]{tikzpingus/tex/tikzpingus}
 \newsavebox\OutPingu
-\setbox\OutPingu=\hbox{\tikz{\pingu[lightsaber right,right wing wave, glow,devil wings=btdl@color@primary!80!black!96!purple,wool hat=darkgray,laptop left,eyes wink,blush,heart,body type=legacy,bow tie=pingu@blue]}}
+\setbox\OutPingu=\hbox{\tikz{\pingu[lollipop right,right wing wave, glow,devil wings=btdl@color@primary!80!black!96!purple,wool hat=darkgray,laptop left,eyes wink,blush,heart,body type=legacy,bow tie=pingu@blue]}}
 \PostPage{\begin{tikzpicture}[@O]
-   \node at(current page.center) {\usebox\OutPingu};
+   \node[above left,scale=.5] at(current page.south west) {\usebox\OutPingu};
 \end{tikzpicture}}
 
 \setbeamerfont{subtitle}{size=\fontsize{19}{19},series=\sbfamily}
@@ -181,7 +207,7 @@
 \usepackage{xspace}
 
 \usepackage{mathastext}
-\outro{\label{LAST}\raisebox{8pt}{\tikz{\node[text=white,opacity=.9] at (current page.north east) {\mdseries\scriptsize\href{https://github.com/EagleoutIce/institute-2023-presentation}{github.com/EagleoutIce/institute-2023-presentation}};}}}
+\outro{\label{LAST}\raisebox{8pt}{\tikz{\node[text=white,opacity=.9] at (current page.north east) {\mdseries\scriptsize\href{https://github.com/EagleoutIce/institute-2024-presentation}{github.com/EagleoutIce/institute-2024-presentation}};}}}
 
 \setbeamerfont{section in toc}{size=\fontsize{10}{12},series=\bfseries}
 \setbeamertemplate{section in toc}{\strut\foreach\i in{1,...,\inserttocsectionnumber}{\hspace*{3.5em}}\textcolor{gray}{\inserttocsectionnumber.}\space\inserttocsection\bigskip}
@@ -194,5 +220,5 @@
 
 \newsavebox\CodeBox
 
-
+\addbibresource{references.bib}
 \errorcontextlines9999

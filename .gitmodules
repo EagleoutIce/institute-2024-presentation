@@ -1,3 +1,6 @@
 [submodule "tikzpingus"]
 	path = tikzpingus
 	url = https://github.com/EagleoutIce/tikzpingus
+[submodule "code-animation"]
+	path = code-animation
+	url = https://github.com/EagleoutIce/code-animation.git

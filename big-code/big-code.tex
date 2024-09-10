@@ -1,0 +1,378 @@
+\input{preamble.cfg}
+\begin{document}
+\preview\footnotesize
+\begin{minted}{R}
+#R version 4.0.5 (2021-03-31)
+library("groundhog")
+p <- c("tidyverse", "broom", "svglite", "gdtools", "GenSA", "gghighlight")
+groundhog.library(p, "2021-02-15")
+rm(p)
+
+# latvina for cultivar names
+sessionInfo(); Sys.setlocale("LC_ALL", "Latvian") # lv valoda
+
+# set the data directory and load workspace
+setwd("G:/Shared drives/Fenologija/Raksti/abeles/Zenodo/")
+load("Apple_Pure_phenology_R_workspace_image.RData")
+
+# -----------------------------------------
+# scirpt to recreate components included in of "Apple_Pure_phenology_R_workspace_image.RData"
+{
+# --------------------------
+# phenology data subset having at least 14 observations owerlaping wiht meteorology data set
+{
+   dM <- d %>%
+      filter(Year %in% (meteoH$e_obs$Year))
+   dM <- dM %>%
+      group_by(Variety) %>%
+      summarize(N = n()) %>%
+      arrange(N) %>%
+      filter(N >= 14) %>% # 12 skirnes
+      select(-N) %>%
+      left_join(dM)
+}
+
+# ----------------------
+# FUNCTION definitinos
+# phenology model deifned as functino, see Kalvans et al, 2015, DDcos model for details
+{
+   # parameter set for model testing
+   pari = c(Tb = 10.1, DD = 200.1) # Tb - base temperature; DD - cumulative degree days for phase onset
+   # lookup table for sin distribution
+   sadalijums = round((sin(seq(0, 1, 0.01) *2 *pi) + 1)/2, 2)
+
+   # elementary function, start of heat sum accumulation Januar 1
+   DDsin_el <- function(pari,
+                        meteoi,
+                        sadalijums) {
+      # pari - model parameters (Tb and DD)
+      # meteoi - meteorology data
+      # sadalijums - lookup table for sin distributino
+      a <- meteoi %>%
+      mutate(Tspread = Tmax - Tmin,
+               DD = map2(Tspread, Tmin, ~(sadalijums * .x) + .y),
+               DD = map(DD, ~(. -pari["Tb"])),
+               DD = map_dbl(DD, ~replace(., . < 0, 0) %>% sum()),
+               DD = DD / length(sadalijums),
+               DD = cumsum(DD)) %>%
+      filter(DD >= pari["DD"]) %>%
+      filter(DoY == min(DoY)) %>%
+      select(Date, DoY, DD) %>%
+      rename(Analysis_DoY = DoY)
+      return(a)
+   }
+   # elementary function test
+   DDsin_el(pari = pari,
+            meteoi = meteo$e_obs$data[[1]],
+            sadalijums = sadalijums)
+
+   # applyign the elementary functino to full data set
+   DDsin <- function(pari,
+                     sadalijums,
+                     dd,
+                     meteod) {
+      # dd - phenology data,
+      # meteod - meteorology data to be used
+      # pari - phenology model paramters (Tb, DD)
+      # Tb - bazes temepratura
+
+      inner_join(dd, meteod, by = c("Year")) %>%
+      filter(!is.na(data)) %>%
+      mutate(Analysis_DoY = purrr::map(data, ~DDsin_el(pari = pari,
+                                                         meteoi = .,
+                                                         sadalijums = sadalijums))) %>%
+      unnest(cols = c(Analysis_DoY))
+   }
+
+   # test the model for furll data set
+   DDsin(pari = pari,
+         sadalijums = sadalijums,
+         dd = d[c(1:10),],
+         meteod = meteo$e_obs)
+
+   # calculating the model preformance indicators
+   # (Nstat - number of data points; ME - mean erro; MAE - mean absolute error; RMSE - root mean squared error)
+   DDsin_stat <- function(pari,
+                           stats,
+                           sadalijums,
+                           dd,
+                           meteod) {
+
+      # pari - parameter set for phenology model (Tb, DD)
+      # stats - to be returned, charatet vector, any combinatio of Nstat, ME, MAE, RMSE
+      # sadalijums - sin distribution lookutable
+      # dd - phenology data
+      # meteod - meteorology data
+
+      analyse <- DDsin(pari = pari,
+                     sadalijums = sadalijums,
+                     dd = dd,
+                     meteod = meteod)
+      statistics <- analyse %>%
+      ungroup() %>%
+      mutate(dif = Full_bloom_yd - Analysis_DoY) %>%
+      summarize(Nstat = n(),
+                  ME = mean(dif, na.rm = T),
+                  MAE = mean(abs(dif), na.rm = T),
+                  RMSE = sqrt(mean(dif^2, na.rm = T)))
+
+      statistics %>%
+      select(contains(stats)) %>%
+      unlist()
+   }
+   DDsin_stat(pari = pari,
+               stats = c("ME", "RMSE"),
+               sadalijums = sadalijums,
+               dd = d[c(1:20), ],
+               meteod = meteo$e_obs)
+
+}
+
+# model optimizatino
+{
+   DDsinOpt <- function(pari, dd, meteod, maxit,
+                        loweri, upperi) {
+
+      # pari - phenology model initial paramters (Tb, DD)
+      # dd - phenology data
+      # meteod - meteorological data
+      # maxit - maximum number of GenSA iterations, set to 1 for testing
+      # loweri - lower bound of model parameter range  (Tb, DD)
+      # upperi - upper bound of model parameter range  (Tb, DD)
+
+      # if pari == NA a random set is generated
+      if (any(is.na(pari))) {
+      pari = runif(2) * (upperi - loweri) + loweri
+      }
+
+      # test if the phenology and meteorology data oweralap in time
+      if (any(dd$Year %in% meteod$Year)) {
+      print(Sys.time())
+
+      print("DDsinOpt")
+      a <- GenSA::GenSA(par = pari,
+                        fn = DDsin_stat,
+                        lower = loweri,
+                        upper = upperi,
+                        stats = c("RMSE"),
+                        sadalijums = sadalijums,
+                        dd = dd,
+                        meteod = meteod,
+                        control = list(maxit = maxit,
+                                       verbose = T,
+                                       temperature = 10000,
+                                       smooth = T,
+                                       simple.function = T))
+
+
+      return(a$par)
+      } else {
+      print("meteoorology and phneology data do not owerlap!")
+      c(Tb = NA, DD = NA)
+      }
+   }
+   # test the optimizatino function
+   DDsinOpt(pari = NA, dd = d[c(200:230),], meteod = meteoH$e_obs, maxit = 1,
+            lower = c(Tb = 0, DD = 100), upper = c(Tb = 10, DD = 400))
+   DDsinOpt(pari = c(Tb = 10.1, DD = 200.1), dd = d[c(220:235),], meteod = meteoH$e_obs, maxit = 2,
+            lower = c(Tb = 0, DD = 100), upper = c(Tb = 11, DD = 400))
+
+}
+
+# -----------------------------------------
+# MODEL OPTIMIZATION
+# model optimization by cultivar and meteorology data source, to compare the model fit between data sources
+{
+   # emty object to store optimizatio results
+   rez = c()
+   # initial parameter set;
+   pari = c(Tb = NA, DD = NA)
+   for(i in c(1:100)) {
+      print(i)
+
+      di <- dM %>%
+      group_by(Variety) %>%
+      nest() %>%
+      mutate(data = map(data, ~mutate(., Cal = as.logical(rbinom(dim(.)[1], size = 1, prob = 0.5)))),
+               Ncal = map_dbl(data, ~summarize(., Ncal = sum(Cal)) %>% unlist()))
+
+      for (n in names(meteoH)) {
+      print(n)
+      a <- di %>%
+         mutate(Gensa = map(data, ~DDsinOpt(pari = pari, dd = filter(., Cal), meteod = meteoH[[n]], maxit = 5,
+                                             lower = c(Tb = 0, DD = 100), upper = c(Tb = 11, DD = 400)) %>%
+                              t() %>% as.data.frame()),
+               Stat = map2(Gensa, data, ~DDsin_stat(pari = unlist(.x),
+                                                      stats = c("Nstat" ,"ME", "MAE","RMSE"),
+                                                      dd = .y %>% filter(!Cal),
+                                                      sadalijums = sadalijums,
+                                                      meteod = meteoH[[n]])  %>%
+                              t() %>% as.data.frame())) %>%
+         select(Variety, Ncal, Gensa, Stat) %>%
+         unnest(cols = c(Gensa, Stat)) %>%
+         mutate(Meteo = n)
+      rez = bind_rows(rez, a)
+      rm(i, a)
+
+      # write_rds(rez, "G:/Shared drives/Fenologija/Raksti/abeles/rez_R/fit_5_fix_t0_100_MeteoTest_min14.rds")
+      }
+      rm(n,i)
+   }
+   # save the results
+   write_rds(rez, "G:/Shared drives/Fenologija/Raksti/abeles/rez_R/fit_all.rds")
+   # cehck the results
+   tail(rez)
+   meteo_comparison <- rez; rm(rez)
+}
+
+# model optimization with e-obs data set lumped all varieties
+{
+   # emty object to store optimizatio results
+   rez = c()
+   # initial parameter set;
+   pari = c(Tb = NA, DD = NA)
+   for(i in c(1:100)) {
+      print(i)
+
+      di <- d %>%
+      group_by(Variety) %>%
+      nest() %>%
+      mutate(data = map(data, ~mutate(., Cal = as.logical(rbinom(dim(.)[1], size = 1, prob = 0.5)))),
+               Ncal = map_dbl(data, ~summarize(., Ncal = sum(Cal)) %>% unlist()))
+
+
+      a <- di %>%
+      mutate(Gensa = map(data, ~DDsinOpt(pari = pari, dd = filter(., Cal), meteod = meteoH[[n]], maxit = 5,
+                                          lower = c(Tb = 0, DD = 100), upper = c(Tb = 11, DD = 400)) %>%
+                           t() %>% as.data.frame()),
+               Stat = map2(Gensa, data, ~DDsin_stat(pari = unlist(.x),
+                                                   stats = c("Nstat" ,"ME", "MAE","RMSE"),
+                                                   dd = .y %>% filter(!Cal),
+                                                   sadalijums = sadalijums,
+                                                   meteod = meteo$e_obs)  %>%
+                           t() %>% as.data.frame())) %>%
+      select(Variety, Ncal, Gensa, Stat) %>%
+      unnest(cols = c(Gensa, Stat)) %>%
+      mutate(Meteo = n)
+      rez = bind_rows(rez, a)
+      rm(i, a)
+
+      }
+   rm(n,i)
+   # save the results
+   write_rds(rez, "G:/Shared drives/Fenologija/Raksti/abeles/rez_R/e_obs_noVariety.rds")
+   # cehck the results
+   tail(rez)
+   e_obs_noVariety <- rez; rm(rez)
+}
+}
+
+# -----------------------------------------
+# ILUSTRATIONS
+# Figure 1 periodu medians
+{
+   dMed_year <- d %>%
+      group_by(Year) %>%
+      summarize(Med = median(Full_bloom_yd))
+
+   dMed_periods <-
+      tibble(Per = c("I", "II", "III"), From = c(1959, 1976, 2002), To = c(1967, 1987, 2019)) %>%
+      mutate(Med = map2_dbl(From, To, ~filter(d, Year >= .x, Year <= .y) %>%
+                              summarize(Med = median(Full_bloom_yd)) %>% pull())) %>%
+      gather(Par, Value, -Per, -Med)
+   print(dMed_periods)
+
+   a <- d %>%
+      ggplot(aes(Year, Full_bloom_yd)) +
+      geom_jitter(shape = 1, width = 0.2, height = 0) +
+      geom_line(data = dMed_periods, mapping = aes(Value, Med, group = Per), lwd = 2, alpha = 0.5) +
+      scale_x_continuous(minor_breaks = c(1957, 1958, 1959:2019, 2020, 2021),
+                        breaks = seq(1960, 2015, 5)) +
+      ylab("Full flowering, day of the year")
+   print(a)
+
+   rm(dMed_year, dMed_periods, a)
+}
+
+# Figure 2 meteo salidzinajums
+{
+   a <- meteo_salidzinajums %>%
+      mutate(Meteo = replace(Meteo, Meteo == "meteo.lv", "Stende meteorological station")) %>%
+      select(-Ncal, -Nstat, -Tb, -DD) %>%
+      mutate(Variety = str_replace(Variety, " ", "\n")) %>%
+      gather(Error, Value_e, -Variety, -Meteo) %>%
+      ggplot(aes(Variety, Value_e, fill = Meteo)) +
+      geom_boxplot() +
+      facet_wrap(~Error, scales = "free") +
+      ylab("Model error, days") +
+      labs(fill = 'Meteorological data source') +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+            legend.position = "bottom")
+   print(a)
+   rm(a)
+
+   # statistika
+   meteo_salidzinajums %>%
+      select(-Ncal, -Nstat, -Tb, -DD) %>%
+      gather(Error, Value_e, -Variety, -Meteo) %>%
+      group_by(Error, Meteo) %>%
+      summarize(Med = median(Value_e)) %>%
+      as.data.frame()
+}
+
+# Figure 3
+# Tb un DD e-obsam, visual inspection
+{
+
+   a <- e_obs_noVariety %>%
+      ggplot(aes(Tb, DD)) +
+      geom_point(shape = 1)
+   a <- ggplotGrob(a)
+   b <- e_obs_noVariety %>%
+      ggplot(aes(Tb, RMSE)) +
+      geom_point(shape = 1)
+   b <- ggplotGrob(b)
+   cc <- e_obs_noVariety %>%
+      ggplot(aes(RMSE, DD)) +
+      geom_point(shape = 1)
+   cc <- ggplotGrob(cc)
+   blank <- ggplot() + theme_void()
+   blank <- ggplotGrob(blank)
+
+
+   abc <- gridExtra::arrangeGrob(cbind(rbind(a, b, size = "first"),
+                                       rbind(cc, blank, size = "first"),
+                                       size = "first"))
+   grid::grid.newpage()
+   grid::grid.draw(abc)
+
+   rm(a, b, cc, abc, blank)
+}
+
+# a single best paramter (Tb, DD) set
+{
+   e_obs_noVariety_global <-
+      e_obs_noVariety %>%
+      rename(Nstat_l = Nstat,ME_l = ME, MAE_l = MAE,  RMSE_l = RMSE) %>%
+      mutate(stats = map2(Tb, DD, ~ DDsin_stat(pari = c(Tb = .x, DD = .y),
+                                             stats = c("Nstat", "ME", "MAE", "RMSE"),
+                                             sadalijums = sadalijums,
+                                             dd = d,
+                                             meteod = meteo$e_obs)))
+
+   e_obs_noVariety_global %>%
+      mutate(stats = map(stats, ~array(., c(1, length(.)), dimnames = list(NULL, names(.))) %>% as.data.frame())) %>%
+      unnest(cols = c(stats)) %>%
+      arrange(RMSE) %>% as.data.frame()
+
+   z <- e_obs_noVariety %>%
+      filter(Tb >= 2.5, Tb <= 4.0) %>%
+      arrange(RMSE)
+
+   as.data.frame(z)
+   range(z$DD)
+}
+rm(z, e_obs_noVariety_global)
+\end{minted}
+\endpreview
+\end{document}

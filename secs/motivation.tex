@@ -1,15 +1,123 @@
 % wir starten mit dem was uns jetzt wahrscheinlich alle fehlt
 \Sec{Let's get some}{Motivation}
-\begin{frame}{~}
-\solSetStyle{keywordA}{}%
-\begin{focus}
-   % fragen ob die befehle allen so grob bekannt sind
-\begin{minipage}{.65\linewidth}
-Probleme mit Reproduzier- und Replizierbarkeit
-\end{minipage}%
-\end{focus}
-% stern danach ja nein einfach erklären
+% \begin{frame}{~}
+% \solSetStyle{keywordA}{}%
+% \begin{focus}
+%    % fragen ob die befehle allen so grob bekannt sind
+% \begin{minipage}{.65\linewidth}
+% Probleme mit Reproduzier- und Replizierbarkeit
+% \end{minipage}%
+% \end{focus}
+% % stern danach ja nein einfach erklären
+% \end{frame}
+
+\def\LinkMark#1{\textcolor{gray}{\scriptsize#1}}
+%\def\Rect#1#2{\draw[rounded corners,gray] ([shift={(-.5mm,.5mm)}]#1.north west) rectangle ([shift={(.5mm,-.5mm)}]#2.south east);}
+\newcommand\BraceRight[4][2mm]{\draw[line cap=round, gray,decorate,decoration={brace}] ([shift={(#1,.5mm)}]#2.north west-|#3.east) to[edge node={node[right=1mm,font=\small,align=left] {#4}}] ([shift={(#1,-.5mm)}]#3.south east);}
+\newcommand\BraceBelow[4][.5mm]{\draw[line cap=round, gray,decorate,decoration={brace,mirror}] ([shift={(-.5mm,-#1)}]#2.south west) to[edge node={node[below=1mm,font=\small] {#4}}] ([shift={(.5mm,-#1)}]#3.south east);}
+\def\Arrow#1#2{\draw[Kite-,line cap=round,gray,font=\small] ([xshift=2mm]#1.east) -- ++(4.5mm,0) node[right=1mm] {#2};}
+\def\ArrowBelow#1#2#3{\path (#1.south west)--(#2.south east) coordinate[pos=.5] (@); \draw[Kite-,line cap=round,gray,font=\small] (@) -- ++(0,-3mm) node[below] {#3};}
+\def\Out#1{{\color{lightgray}\sout{#1}}}
+
+% ToDo: https://cran.r-project.org/web/packages/groundhog/index.html
+% could be used to check if r packages are rpeproducible and use the version
+
+\colorlet{@highlight}{black!70!white!95!red}
+
+\def\FileSpy#1{\scope[spy using outlines={rectangle, magnification=10,width=8cm,height=4cm,rounded corners=1pt,line cap=round,connect spies}]#1\endscope}
+
+\def\FileHeight{6cm}
+\def\ShowFile{\node[fill=white] (@) at (0,0) {\includegraphics[height=\FileHeight]{./big-code/build/big-code.pdf}};}
+\def\FileCite{\begin{tikzpicture}[@O]
+   \node[FCite] at(current page.south west) {\bottomcite{drudze_2021_4912025}};
+\end{tikzpicture}}
+\tikzset{file spy goal/.style={
+   rounded corners=4pt,
+   drop shadow={fill=lightgray!50}
+}}
+\def\FileBasis#1#2#3#4{
+\begin{tikzpicture}
+\FileSpy{
+   \onslide<#1>{\ShowFile}
+   \only<#2>{\spy[opacity=.9] on ([yshift=-4.5mm,xshift=-1.33mm]@.north) in node (@b) [file spy goal] at (5,0);}
+   #4
+}
+   #3
+\end{tikzpicture}\onslide<#1>{\FileCite}
+}
+
+% needs a larger tex memory to build :3
+% 1-Zenodo_Output.csv-output/695/2_Apple_Pure_phenology_R_script.r
+
+\def\Scripts{\textcolor{lightgray}{R Scripts}\space}
+
+\begin{frame}[c]{\Scripts Fail to Replicate}
+\begin{layout-full}
+\FileBasis{1-}{1-}{% 371 lines (avg. ~348)
+   \only<2->{
+      \draw[thick,@highlight,rounded corners=2pt] ([xshift=-2.5cm,yshift=-6.1mm]@b.north east) node[below left,fill=white,fill opacity=.5,text opacity=1] {{\bfseries\tiny Hardcoded Paths}};
+   }
+   \only<4->{
+      \draw[thick,@highlight,rounded corners=2pt]  ([xshift=-2.05cm,yshift=-9.25mm]@c.north east) node[below left,fill=white,fill opacity=.5,text opacity=1] {{\bfseries\tiny (Pseudo-)Randomness without Seed}};
+   }
+}{
+   \only<3->{
+      \spy[opacity=.9,height=3cm] on ([yshift=-24.5mm,xshift=-1.33mm]@.north) in node (@c) [file spy goal] at (5.33,-1.1);
+   }
+}
+\end{layout-full}
+\begin{tikzpicture}[@O]
+   \onslide<5->{
+      \node[below left=6mm,yshift=-5mm] at(current page.north east) {%
+         \textbf{\qty{74}{\percent} even fail to complete!}\supercite{trisovic_largescale_2022}%
+      };
+      \node[FCite] at(current page.south west) {\bottomcite{trisovic_largescale_2022}\\\strut};
+   }
+\end{tikzpicture}
+\note[itemize]{
+   \item hardcoded paths, scattered througout the script
+   \item randomness without seed, unknown if intendent or differences are due to randomness
+   \item up to you the reviewer to decide if differences in the results are intendet, due to randomness or errors
+   \item problems backed up by a study from Trisovic with R projects as parts of publications: 74\% fail to run to completion complete
+   \item missing libraries or files
+   \item syntax errors
+   \item missing setup
+   \item **Next Slide**
+}
 \end{frame}
 
+   % 371 lines divided by \FileHeight to get per-line height we try to fake pad it a little bit
+   \pgfmathsetmacro{\LineHeight}{\FileHeight/372}
+\def\AtLine#1#2#3{%
+   \def\tmp{#2}%
+   \ifx\tmp\empty
+   \path[]
+      ([yshift=-\LineHeight pt*#1+3.85mm]@.north east) coordinate (s) to[edge node={node[right=1.25mm] {\small#2}}]([yshift=-\LineHeight pt*#3+3.8mm]@.north east) coordinate (e);
+   \else
+   \draw[decoration={brace},decorate,@highlight,thick,line cap=round]
+      ([yshift=-\LineHeight pt*#1+3.85mm]@.north east) coordinate (s) to[edge node={node[right=1.25mm] {\small#2}}]([yshift=-\LineHeight pt*#3+3.8mm]@.north east) coordinate (e);
+   \fi
+   \fill[@highlight,opacity=.15,rounded corners=.65pt] ([xshift=-1mm]s) rectangle ([xshift=1mm]e-|@.south west);
+
+}
+
+\begin{frame}{The Reproducibility Crisis}
+   \begin{itemize}
+      \itemsep8pt
+      \item<2-> We have a problem with reproducibility\supercite{baker20161}
+      \item<3-> Consequently, with FAIR research\supercite{barker2022introducing} \begin{itemize}
+         \item Findable % (DOI, in registry, ....)
+         \item Accessible % (open access, ...)
+         \item Interoperable % (standards, ...)
+         \item Reusable % (license, executable, ...); hier hören wir auch von anderen (Jakob mit Zenodo usw.)
+      \end{itemize}
+   \end{itemize}
+   \begin{tikzpicture}[@O]
+      \node[FCite] at(current page.south west) {%
+      \bottomcite{baker20161}\\
+      \bottomcite{barker2022introducing}
+      };
+   \end{tikzpicture}
+\end{frame}
 % \Learning{Use Macros to Ease Your Workflow!}{At leat some, e.g., for names, to reduce repetition\ldots}
 % # structured texing
