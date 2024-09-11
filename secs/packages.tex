@@ -1,0 +1,34 @@
+\Sec{Using other's work by loading}{Important Packages}
+{\def\pkg<#1>#2#3{\onslide<#1>{\parbox{15em}{\blatex{\\usepackage\{#2\}}} \textcolor{gray}{\small--- #3}}}
+\def\pkgo<#1>#2#3#4{\onslide<#1>{\parbox{15em}{\blatex{\\usepackage[#4]\{#2\}}} \textcolor{gray}{\small--- #3}}}
+\newsavebox\Pengu
+\setbox\Pengu=\hbox{\tikz{\pingu[eyes wink,body type=legacy,blush,wings grab,cup,feet sit,:mix-all=15!white]}}
+\begin{frame}{}
+   \focusCfalse\begin{focus}
+      \only<10-|handout:0>{\begin{colormixin}{32!white}}%
+         % TODO: inputenc und fontenc
+      \pkgo<2->{inputenc}{consistent input encoding}{utf8}\\
+      \pkgo<2->{fontenc}{consistent font encoding}{T1}\\
+      \pkg<2->{microtype}{typographical refinements}\\
+      \pkg<3->{booktabs}{nicer looking tables}\\
+      \pkg<4->{siunitx}{format your units}\\
+      \pkg<5->{csquote}{context sensitive quotation}\bigskip\\
+      \pkg<6->{etoolbox}{programming-like constructs}\\
+      \pkg<7->{xstring}{powerful string manipulation}\\
+      \pkg<8->{xfp}{amazing fixed point arithmetic}\bigskip\\
+      \only<10-|handout:0>{\end{colormixin}}%
+      \pkg<9->{tikz}{\say{\ldots~ist kein Zeichenprogramm}}\\
+      % \pkg<10->{forest}{drawing cute trees}
+   \end{focus}
+   % gibt immer noch viel viel viel mehr
+   \begin{tikzpicture}[@O]
+      \onslide<11->{
+         \node[above right=1mm,scale=.225] (@) at(current page.south west) {\href{https://github.com/EagleoutIce/tikzpingus}{\usebox\Pengu}};
+         \node[right=1mm,opacity=.4,scale=.5] (@) at (@.east) {\href{https://github.com/EagleoutIce/tikzpingus}{\blatex{\\usepackage\{tikzpingus\}}  \textcolor{gray}{\small--- for love}}};}
+   \end{tikzpicture}
+\end{frame}%
+}
+
+\Learning{Learn About (New) Packages}{Even \qty{10}{\percent} can save the world\ldots}
+% and yes, some journals lock what is available, but often there are alternatives
+% tabu deprecated, aber immer und überall neue keine und große Pakete

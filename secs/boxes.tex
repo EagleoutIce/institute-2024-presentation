@@ -1,0 +1,90 @@
+\Sec{Understanding some depths with}{Boxes in \LaTeX}
+\begin{frame}{}
+\begin{layout-full}
+   \begin{center}
+      \begin{uncoverenv}<2->
+      \scalebox{4}{\RenderTextGroupInit\transparent{1}\setbox0=\hbox{\RenderText{Typography\ exists}}\setbox1=\hbox{\RenderText{to\ honor\ content}}%
+      % fake M
+      \def\M{{\color{gray}\rule{\dimexpr\wd0-\wd1}{2pt}}}%
+      \robustify\M
+      \MBox[lightgray]{\parbox{\wd0}{\usebox0\\\RenderText{to\ honor\ content}\M}}}%
+   \end{uncoverenv}
+   \end{center}
+   % blue: kerning, middle: spaces, end: last fill
+\end{layout-full}
+\end{frame}
+
+\begin{frame}[fragile]
+\begin{layout-full}
+\begin{center}
+\begin{uncoverenv}<1->
+\begin{tikzexample}
+\fbox{Hello!} World
+\end{tikzexample}
+\end{uncoverenv}\medskip
+\begin{uncoverenv}<2->
+\begin{tikzexample}
+\fbox{\smash{Hello!}} World
+\end{tikzexample}
+\end{uncoverenv}\medskip
+\begin{uncoverenv}<3->
+\begin{tikzexample}
+\fbox{\raisebox{10pt}{Hello!}} World
+\end{tikzexample}
+\end{uncoverenv}\medskip
+\begin{uncoverenv}<4->
+\begin{tikzexample}
+\fbox{\rotatebox{30}{Hello!}} World
+\end{tikzexample}
+\end{uncoverenv}
+\end{center}
+\end{layout-full}
+\end{frame}
+
+\begin{frame}[fragile]
+\begin{layout-full}
+\begin{center}
+\begin{uncoverenv}<1->
+\begin{tikzexample}
+\fbox{alignment}
+\end{tikzexample}
+\end{uncoverenv}\medskip
+\begin{uncoverenv}<2->
+\begin{tikzexample}
+\fbox{\llap{alignment}}
+\end{tikzexample}
+\end{uncoverenv}\medskip
+\begin{uncoverenv}<3->
+\begin{tikzexample}
+\fbox{\clap{alignment}}
+\end{tikzexample}
+\end{uncoverenv}\medskip
+\begin{uncoverenv}<4->
+\begin{tikzexample}
+\fbox{\rlap{alignment}}
+\end{tikzexample}
+\end{uncoverenv}
+\end{center}
+\end{layout-full}
+\end{frame}
+
+\begin{frame}[fragile]
+\begin{layout-full}
+\begin{center}
+\begin{uncoverenv}<1->
+\begin{tikzexample}
+\newsavebox\MyBox
+\savebox\MyBox{Content}
+
+\usebox\MyBox
+
+\usebox\MyBox
+\end{tikzexample}
+\end{uncoverenv}
+\end{center}
+\end{layout-full}
+\end{frame}
+
+% boxes, llap, rlap, clap, raisebox,
+
+\Learning{Everything Is a Box}{And you can use that to your advantage!}

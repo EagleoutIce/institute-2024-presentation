@@ -1,3 +1,31 @@
+\begin{frame}[plain]
+%
+\definecolor{uulmaccent}{HTML}{A9A28D}
+\definecolor{red}{HTML}{A32638}
+\begin{tikzpicture}[overlay,remember picture]
+
+\node at (current page.center) {\includegraphics[width=\paperwidth]{img/rocket.png}};
+
+\fill[uulmaccent] (current page.south west)
+   rectangle ([xshift=-2cm,yshift=5mm]current page.south east) node[midway,centered] {[Titel einfügen]};
+
+\fill[red] (current page.south east) rectangle ++(-1.85cm,5mm) coordinate (@);
+
+\node[below right,white] at(@) {\kern-6pt\scriptsize \thepage\;/\;\pageref{LAST}};
+\node[below,white] at([yshift=5mm]current page.south) {\scriptsize[Datum einfügen]};
+
+\node[below left=8.5mm,yshift=-7mm,xshift=3.5mm,rotate=-50,starburst,drop shadow,fill=white,fill opacity=.95,draw=red,very thick,text=red,inner sep=2mm,scale=1.33,align=center] at (current page.north east) {\textbf{New!}\\\only<2->{\scriptsize(naja)}};
+
+\node[below=2cm,text width=\paperwidth,align=right,font=\huge\bfseries\color{white},fill=red,inner sep=2mm] at (current page.center) {Titel einfügen~~};
+
+\end{tikzpicture}
+
+
+   % powerpoint gag offset page number
+   % weird image in the middle, fake animation
+
+\end{frame}
+
 \begin{frame}
 % \hspace*{4em}
 \begin{focus}
@@ -6,7 +34,4 @@
    \tableofcontents
 \end{minipage}
 \end{focus}
-\begin{tikzpicture}[@O]
-   \node[below left,text width=.55\linewidth,align=right] at(current page.north east) {\bfseries\color{gray!40}Docker, Computable Documents, and Love};
-\end{tikzpicture}
 \end{frame}
